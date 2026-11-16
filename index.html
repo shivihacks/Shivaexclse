@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="hi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SheetPro Spreadsheet</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f2f5fa;color:#172238;font:14px Arial,sans-serif}header{background:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #dce3ed;position:sticky;top:0;z-index:5}.logo{background:#16834a;color:white;padding:10px;border-radius:9px;font-size:20px}h1{font-size:18px;margin:0}.muted{color:#68758a;font-size:12px}main{max-width:1400px;margin:auto;padding:12px}.bar{display:flex;flex-wrap:wrap;gap:6px;padding:9px;background:white;border:1px solid #dce3ed;border-radius:10px 10px 0 0}.bar button,.bar select,.bar label,header button{border:1px solid #dce3ed;background:#fff;border-radius:7px;padding:8px;cursor:pointer;color:#172238;font-weight:600}.bar input[type=color]{width:34px;height:30px;border:0}.primary{background:#16834a!important;color:white!important;border-color:#16834a!important}.formula{display:flex;gap:8px;align-items:center;padding:8px;background:#fff;border:1px solid #dce3ed;border-top:0}.formula input{padding:8px;border:1px solid #dce3ed;border-radius:6px}.formula #name{width:70px;text-align:center}.formula #fx{flex:1;min-width:0}.wrap{overflow:auto;max-height:68vh;background:white;border:1px solid #dce3ed;border-top:0}table{border-collapse:separate;border-spacing:0;table-layout:fixed;min-width:100%}th,td{width:115px;min-width:115px;height:30px;border-right:1px solid #e3e8ef;border-bottom:1px solid #e3e8ef;padding:0}th{background:#eef2f7;position:sticky;top:0;z-index:2;text-align:center;color:#56647a}.rh{position:sticky;left:0;z-index:1;width:42px;min-width:42px;text-align:center;background:#eef2f7}.corner{left:0;z-index:3}.cell{width:100%;height:29px;border:0;outline:0;padding:4px 6px;background:transparent;font:14px Arial;color:inherit}.cell:focus{outline:2px solid #16834a;outline-offset:-2px}.tabs{padding:9px;background:white;border:1px solid #dce3ed;border-top:0;border-radius:0 0 10px 10px}.tab{background:#e8f5ec;border:1px solid #b9ddc6;padding:7px 13px;border-radius:6px}.status{font-size:12px;color:#68758a;margin:9px 2px}header .right{margin-left:auto;display:flex;gap:7px}
+@media(max-width:550px){main{padding:7px}.bar{gap:4px}.bar button,.bar select,.bar label{padding:7px;font-size:12px}.muted{display:none}}
+</style></head><body>
+<header><div class="logo">▦</div><div><h1>SheetPro</h1><div class="muted">Spreadsheet editor · CSV compatible</div></div><div class="right"><button id="new">＋ New</button><button id="export" class="primary">↓ Export CSV</button></div></header>
+<main>
+<div class="bar">
+<button id="bold"><b>B</b></button><button id="italic"><i>I</i></button><button id="under"><u>U</u></button>
+<select id="font"><option>Arial</option><option>Calibri</option><option>Times New Roman</option><option>Georgia</option><option>Verdana</option><option>Courier New</option></select>
+<select id="size"><option>10</option><option>12</option><option selected>14</option><option>16</option><option>18</option><option>20</option><option>24</option><option>28</option><option>32</option></select>
+<span>Text <input type="color" id="color" value="#172238"></span><span>Fill <input type="color" id="fill" value="#ffffff"></span>
+<button id="left">⇤</button><button id="center">☰</button><button id="right">⇥</button>
+<button id="sum">∑ AutoSum</button><button id="clear">Clear</button><button id="row">＋ Row</button><button id="col">＋ Column</button>
+<label for="import">↑ Import CSV</label><input id="import" type="file" accept=".csv" hidden>
+</div>
+<div class="formula"><input id="name" value="A1"><b>fx</b><input id="fx" placeholder="Value ya formula, jaise =SUM(A1:A5)"></div>
+<div class="wrap"><table><thead id="head"></thead><tbody id="body"></tbody></table></div>
+<div class="tabs"><span class="tab">Sheet1</span> <span class="muted" id="count">100 rows × 12 columns</span></div>
+<div class="status" id="status">Ready · Apna data enter karein. CSV export karke Excel me khol sakte hain.</div>
+</main>
+<script>
+let R=100,C=12,D=[],S=[],a={r:0,c:0};const $=x=>document.getElementById(x);
+function col(n){let s='';for(;n>=0;n=Math.floor(n/26)-1)s=String.fromCharCode(n%26+65)+s;return s}
+function address(r,c){return col(c)+(r+1)}
+function parse(s){let m=/^([A-Z]+)([1-9][0-9]*)$/i.exec(s);if(!m)return null;let c=0;for(let x of m[1].toUpperCase())c=c*26+x.charCodeAt(0)-64;return{r:+m[2]-1,c:c-1}}
+function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function init(){D=Array.from({length:R},()=>Array(C).fill(''));S=Array.from({length:R},()=>Array(C).fill({}));draw()}
+function draw(){ $('head').innerHTML='<tr><th class="rh corner"></th>'+D[0].map((_,i)=>'<th>'+col(i)+'</th>').join('')+'</tr>';let out='';D.forEach((row,r)=>{out+='<tr><th class="rh">'+(r+1)+'</th>';row.forEach((v,c)=>{let st=S[r][c]||{};let css=Object.entries(st).map(([k,v])=>k+':'+v).join(';');out+='<td><input class="cell" data-r="'+r+'" data-c="'+c+'" value="'+esc(v)+'" style="'+css+'"></td>'});out+='</tr>'});$('body').innerHTML=out;$('count').textContent=D.length+' rows × '+D[0].length+' columns';sync()}
+function sync(){ $('name').value=address(a.r,a.c);$('fx').value=D[a.r]?.[a.c]??''}
+$('body').addEventListener('focusin',e=>{if(e.target.classList.contains('cell')){a={r:+e.target.dataset.r,c:+e.target.dataset.c};sync()}});
+$('body').addEventListener('input',e=>{if(e.target.classList.contains('cell')){let r=+e.target.dataset.r,c=+e.target.dataset.c;D[r][c]=e.target.value;a={r,c};sync()}});
+$('body').addEventListener('keydown',e=>{if(!e.target.classList.contains('cell'))return;let r=+e.target.dataset.r,c=+e.target.dataset.c,delta={Enter:[1,0],Tab:[0,1],ArrowDown:[1,0],ArrowUp:[-1,0],ArrowLeft:[0,-1],ArrowRight:[0,1]}[e.key];if(delta){e.preventDefault();let nr=Math.max(0,r+delta[0]),nc=Math.max(0,c+delta[1]);while(D.length<=nr){D.push(Array(D[0].length).fill(''));S.push(Array(D[0].length).fill({}))}while(D[nr].length<=nc){D.forEach(x=>x.push(''));S.forEach(x=>x.push({}))}draw();document.querySelector('.cell[data-r="'+nr+'"][data-c="'+nc+'"]').focus()}});
+$('name').onchange=()=>{let p=parse($('name').value);if(!p)return;while(D.length<=p.r){D.push(Array(D[0].length).fill(''));S.push(Array(D[0].length).fill({}))}while(D[p.r].length<=p.c){D.forEach(x=>x.push(''));S.forEach(x=>x.push({}))}draw();document.querySelector('.cell[data-r="'+p.r+'"][data-c="'+p.c+'"]').focus()};
+$('fx').onchange=()=>{D[a.r][a.c]=$('fx').value;draw();document.querySelector('.cell[data-r="'+a.r+'"][data-c="'+a.c+'"]').focus()};
+function style(k,v){S[a.r][a.c][k]=v;draw();document.querySelector('.cell[data-r="'+a.r+'"][data-c="'+a.c+'"]').focus()}
+$('bold').onclick=()=>style('font-weight','bold');$('italic').onclick=()=>style('font-style','italic');$('under').onclick=()=>style('text-decoration','underline');
+$('font').onchange=e=>style('font-family',e.target.value);$('size').onchange=e=>style('font-size',e.target.value+'px');$('color').oninput=e=>style('color',e.target.value);$('fill').oninput=e=>style('background-color',e.target.value);
+$('left').onclick=()=>style('text-align','left');$('center').onclick=()=>style('text-align','center');$('right').onclick=()=>style('text-align','right');
+$('clear').onclick=()=>{D[a.r][a.c]='';S[a.r][a.c]={};draw();document.querySelector('.cell[data-r="'+a.r+'"][data-c="'+a.c+'"]').focus()};
+function val(r,c){let x=D[r]?.[c]??'';if(!String(x).startsWith('='))return Number(x)||0;return 0}
+$('sum').onclick=()=>{let start=Math.max(0,a.r-1);D[a.r][a.c]='=SUM('+address(start,a.c)+':'+address(a.r-1,a.c)+')';$('fx').value=D[a.r][a.c];draw();$('status').textContent='SUM formula inserted. Excel me formula calculate hoga.'};
+$('row').onclick=()=>{D.push(Array(D[0].length).fill(''));S.push(Array(D[0].length).fill({}));draw()};
+$('col').onclick=()=>{D.forEach(x=>x.push(''));S.forEach(x=>x.push({}));draw()};
+$('new').onclick=()=>{if(confirm('Current data clear karke new sheet banayein?'))init()};
+$('export').onclick=()=>{let csv=D.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');let blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),u=URL.createObjectURL(blob),link=document.createElement('a');link.href=u;link.download='sheetpro.csv';link.click();URL.revokeObjectURL(u);$('status').textContent='CSV export ready.'};
+$('import').onchange=async e=>{let f=e.target.files[0];if(!f)return;let text=await f.text(),rows=text.trimEnd().split(/\r?\n/).map(line=>line.split(','));D=rows.map(row=>row.map(x=>x.replace(/^"|"$/g,'').replace(/""/g,'"')));if(!D.length)D=[Array(C).fill('')];S=D.map(row=>row.map(()=>({})));a={r:0,c:0};draw();$('status').textContent='CSV import complete.'};
+init();
+</script></body></html>
